@@ -1,0 +1,5 @@
+docker build -t runtesting/knote-js:1.0.0 .
+docker login
+docker push runtesting/knote-js:1.0.0
+docker pull runtesting/knote-js:1.0.0
+docker run -p 3000:3000 runtesting/knote-js:1.0.0
