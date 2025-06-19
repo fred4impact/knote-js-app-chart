@@ -1,12 +1,12 @@
 provider "aws" {
-  region = "us-east-1"
+  region = var.region
 }
 
 resource "aws_vpc" "bilarn_vpc" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block = var.cidr_block
 
   tags = {
-    Name = "bilarn-vpc"
+    Name = var.vpc_name
   }
 }
 
@@ -93,7 +93,7 @@ resource "aws_security_group" "setup_server_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["YOUR_PUBLIC_IP/32"] # Replace with your IP for SSH
+    cidr_blocks = ["0.0.0.0/0"] # Replace with your IP for SSH
   }
 
   egress {
@@ -109,7 +109,7 @@ resource "aws_security_group" "setup_server_sg" {
 }
 
 resource "aws_eks_cluster" "bilarn" {
-  name     = "bilarn-cluster"
+  name     = var.cluster_name
   role_arn = aws_iam_role.bilarn_cluster_role.arn
 
   vpc_config {
@@ -198,7 +198,7 @@ resource "aws_iam_role_policy_attachment" "bilarn_node_group_registry_policy" {
 
 resource "aws_instance" "setup_server" {
   ami             = data.aws_ami.ubuntu_ami.id # Use a valid Ubuntu AMI for your region
-  instance_type   = "t2.xlarge"
+  instance_type   = var.instance_type
   subnet_id       = aws_subnet.bilarn_subnet[0].id
   key_name        = var.ssh_key_name
   security_groups = [aws_security_group.setup_server_sg.id]
@@ -206,6 +206,6 @@ resource "aws_instance" "setup_server" {
   user_data = file("${path.module}/installation-script/installscript.sh")
 
   tags = {
-    Name = "setup-server"
+    Name = var.instance_name
   }
 }

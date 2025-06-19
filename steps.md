@@ -22,7 +22,7 @@ terraform apply
 - Approve the plan when prompted.
 - After completion, update your kubeconfig:
 ```sh
-aws eks --region <region> update-kubeconfig --name <cluster_name>
+aws eks --region <region> update-kubeconfig --name bilarn-cluster
 ```
 
 ---
