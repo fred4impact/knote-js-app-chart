@@ -125,7 +125,7 @@ resource "aws_eks_node_group" "bilarn" {
   subnet_ids      = aws_subnet.bilarn_subnet[*].id
 
   scaling_config {
-    desired_size = 3
+    desired_size = 2
     max_size     = 3
     min_size     = 2
   }
@@ -197,8 +197,8 @@ resource "aws_iam_role_policy_attachment" "bilarn_node_group_registry_policy" {
 }
 
 resource "aws_instance" "setup_server" {
-  ami             = "ami-xxxxxxxx" # Use a valid Ubuntu AMI for your region
-  instance_type   = "t3.medium"
+  ami             = data.aws_ami.ubuntu_ami.id # Use a valid Ubuntu AMI for your region
+  instance_type   = "t2.xlarge"
   subnet_id       = aws_subnet.bilarn_subnet[0].id
   key_name        = var.ssh_key_name
   security_groups = [aws_security_group.setup_server_sg.id]

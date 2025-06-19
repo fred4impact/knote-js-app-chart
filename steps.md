@@ -1,3 +1,108 @@
+# End-to-End Deployment: EKS, ArgoCD, and knote-js-app
+
+This section describes the full workflow to deploy your infrastructure and application using Terraform, ArgoCD, and Helm.
+
+---
+
+## 0. Prerequisites
+
+- AWS CLI configured (`aws configure`)
+- `kubectl`, `helm`, and `terraform` installed
+- Access to your GitHub repo: https://github.com/fred4impact/knote-js-app-chart
+
+---
+
+## 1. Deploy EKS Infrastructure with Terraform
+
+```sh
+cd terraform-eks
+terraform init
+terraform apply
+```
+- Approve the plan when prompted.
+- After completion, update your kubeconfig:
+```sh
+aws eks --region <region> update-kubeconfig --name <cluster_name>
+```
+
+---
+
+## 2. Install ArgoCD on EKS
+
+```sh
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+```
+
+---
+
+## 3. Access ArgoCD UI
+
+- Port-forward the ArgoCD API server:
+```sh
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+```
+- Open `http://localhost:8080` in your browser.
+- Get the initial admin password:
+```sh
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+```
+
+---
+
+## 4. Clone the Application Repo
+
+```sh
+git clone https://github.com/fred4impact/knote-js-app-chart.git
+cd knote-js-app-chart
+```
+
+---
+
+## 5. Deploy the App via ArgoCD
+
+- Create an ArgoCD Application (either via UI or CLI):
+
+**Example using kubectl:**
+```yaml
+# app.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: knote-js-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/fred4impact/knote-js-app-chart.git'
+    targetRevision: HEAD
+    path: knote-js-app-chart
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+```sh
+kubectl apply -f app.yaml
+```
+- Or, add the app via the ArgoCD UI.
+
+---
+
+## 6. Monitor and Access the App
+
+- Watch the app sync in ArgoCD UI.
+- Get the service's external IP:
+```sh
+kubectl get svc
+```
+- Access your app in the browser.
+
+---
+
 # Deploying knote-js-app to EKS using Helm
 
 This guide walks you through creating a Helm chart for your Node.js app (`knote-js-app`), using your Docker image `runtesting/knote-app:v2`, pushing the chart to git, and installing it on your EKS cluster.
@@ -89,13 +194,15 @@ git push -u origin main
 Once your chart is in git, you can install it on your EKS cluster:
 
 ```sh
-helm repo add myrepo <your-helm-repo-url> # if using a chart repo
+helm repo add myrepo https://github.com/fred4impact/knote-js-app-chart # if using a chart repo
 helm install knote-js-app ./knote-js-app-chart
 ```
 
 Or, if you have the chart locally, just use the local path.
 
 ---
+aws eks --region <region> update-kubeconfig --name <cluster_name>
+aws eks --region us-east-1 update-kubeconfig --name bilarn-cluster
 
 ## 7. Access Your App
 
